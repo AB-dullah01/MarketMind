@@ -29,12 +29,13 @@ def get_page_post_analytics(user_id: int, db: Session = Depends(get_db)):
     page_info = pages_resp["data"][0]
     page_id = page_info["id"]
     page_token = page_info["access_token"]
+    #print(page_id,page_token)
 
     # 3. Get posts from the page
     posts_resp = requests.get(
         f"https://graph.facebook.com/v24.0/{page_id}/posts",
         params={
-            "fields": "id,message,created_time",
+            "fields": "id,message,created_time,full_picture,permalink_url",
             "access_token": page_token
         }
     ).json()
@@ -52,13 +53,36 @@ def get_page_post_analytics(user_id: int, db: Session = Depends(get_db)):
             f"https://graph.facebook.com/v24.0/{post_id}/likes",
             params={"summary": "total_count", "access_token": page_token}
         ).json()
+    #     like_data = requests.get(
+    # f"https://graph.facebook.com/v24.0/{post_id}",
+    # params={
+    #     "fields": "reactions.summary(total_count)",
+    #     "access_token": page_token
+    # }
+    # ).json()
+        #print(like_data)
+        #likes_count = like_data.get("reactions", {}).get("summary", {}).get("total_count", 0)
+
 
         # Comments
-        comment_data = requests.get(
+        # comment_data = requests.get(
+        #     f"https://graph.facebook.com/v24.0/{post_id}/comments",
+        #     params={"summary": "total_count", "access_token": page_token}
+        # ).json()
+        comments_resp = requests.get(
             f"https://graph.facebook.com/v24.0/{post_id}/comments",
-            params={"summary": "total_count", "access_token": page_token}
+            params={
+                "fields": "id,from,message,created_time,like_count",
+                "summary": "total_count",
+                "access_token": page_token
+            }
         ).json()
+        print(comments_resp)
 
+        total_comments = comments_resp.get("summary", {}).get("total_count", 0)
+        comments_list = comments_resp.get("data", [])
+
+        
         # Shares
         share_data = requests.get(
             f"https://graph.facebook.com/v24.0/{post_id}/sharedposts",
@@ -70,8 +94,13 @@ def get_page_post_analytics(user_id: int, db: Session = Depends(get_db)):
             "message": post.get("message"),
             "created_time": post.get("created_time"),
             "likes": like_data.get("summary", {}).get("total_count", 0),
-            "comments": comment_data.get("summary", {}).get("total_count", 0),
+            #"likes": likes_count,
+            "comments": total_comments,
+            "comments": comments_list,
             "shares": share_data.get("summary", {}).get("total_count", 0),
+            "image_url": post.get("full_picture"),
+            "post_url": post.get("permalink_url"),
+
         })
 
     return {
