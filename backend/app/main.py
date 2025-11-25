@@ -9,6 +9,7 @@ from app.models import User
 from datetime import datetime, timedelta
 import requests
 from app.routes.facebook_analytics import router as analytics_router
+from app.routes.insta_analytics import router as insta_analytics_router
 from app.routes.post_scheduling import router as scheduling_router
 
 
@@ -18,6 +19,7 @@ load_dotenv()
 app = FastAPI()
 app.include_router(analytics_router)
 app.include_router(scheduling_router)
+app.include_router(insta_analytics_router)
 
 FB_APP_ID = os.getenv("FB_APP_ID")
 FB_APP_SECRET = os.getenv("FB_APP_SECRET")
@@ -31,7 +33,7 @@ def facebook_login():
         f"?client_id={FB_APP_ID}"
         f"&redirect_uri={REDIRECT_URI}"
         "&state=test_state"
-        "&scope=pages_show_list,pages_read_engagement,public_profile,business_management"
+        "&scope=pages_show_list,pages_read_engagement,public_profile,business_management,instagram_basic,instagram_manage_insights"
     )
     return RedirectResponse(auth_url)
 
